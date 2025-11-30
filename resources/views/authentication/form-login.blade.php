@@ -13,13 +13,12 @@
         <!-- /.login-logo -->
         <div class="card">
             <div class="card-body login-card-body">
-                <div class="login-logo mb-4">
-                    <img src="{{ asset('images/halah.jpg') }}" class=" mx-auto d-block" alt="..." width="100">
-                    {{-- <a href="../index2.html"><b>B</b>BB</a> --}}
+                <div class="login-logo">
+                    <img src="{{ asset('images/logo.png') }}" class=" mx-auto d-block" alt="..."
+                        style="width: 300px; height: 150px; object-fit: cover;">
                 </div>
 
                 <form id="Formlogin" method="post">
-
                     <div class="input-group mb-3">
                         <input type="email" id="email" class="form-control" placeholder="email" />
                     </div>

@@ -13,9 +13,9 @@
                 <!-- Navbar kanan -->
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <button class="btn btn-danger">
+                        <a href="{{ route('home.logout') }}" class="btn btn-danger">
                             Logout <i class="bi bi-arrow-bar-right"></i>
-                        </button>
+                        </a>
                     </li>
                 </ul>
             </div>

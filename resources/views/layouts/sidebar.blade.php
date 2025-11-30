@@ -1,18 +1,12 @@
   <!--begin::Sidebar-->
   <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
       <!--begin::Sidebar Brand-->
-      <div class="sidebar-brand">
-          <!--begin::Brand Link-->
-          <a href="./index.html" class="brand-link">
-              {{-- <!--begin::Brand Image-->
-              <img src="{{ asset('images/api.png') }}" alt="AdminLTE Logo" class="brand-image-xl  shadow" />
-              <!--end::Brand Image--> --}}
-              <!--begin::Brand Text-->
-              <span class="brand-text fw-light " style="font-size: 40px; color: #BF1A1A; font-weight:semibold;">BBB</span>
-              <!--end::Brand Text-->
-          </a>
-          <!--end::Brand Link-->
+      <div class="sidebar-brand d-flex justify-content-center align-items-center" style="padding: 40px 0 40px 0; ">
+          <img src="http://localhost:8000/images/logo.png" alt="Logo"
+              style="max-width:140px; height:auto; object-fit:contain; display:block;">
       </div>
+
+
       <!--end::Sidebar Brand-->
       <!--begin::Sidebar Wrapper-->
       <div class="sidebar-wrapper">
@@ -293,33 +287,39 @@
                   </li> --}}
 
                   <li class="nav-item">
-                      <a href="./docs/introduction.html" class="nav-link">
+                      <a href="{{ route('master-barang') }}" class="nav-link">
                           <i class="nav-icon bi bi-box-fill"></i>
                           <p>Master Barang</p>
                       </a>
                   </li>
                   <li class="nav-item">
-                      <a href="./docs/introduction.html" class="nav-link">
+                      <a href="{{ route('master-customer') }}" class="nav-link">
                           <i class="nav-icon bi bi-person-badge-fill"></i>
                           <p>Master Pelanggan </p>
                       </a>
                   </li>
-                  <li class="nav-header">Pembelian</li>
+                  <li class="nav-header">Transaksi</li>
                   <li class="nav-item">
-                      <a href="./docs/introduction.html" class="nav-link">
-                          <i class="nav-icon bi bi-wallet2"></i>
-                          <p>Manajeman Pembelian</p>
+                      <a href="{{ route('transaksi-masuk') }}" class="nav-link">
+                          <i class="fas fa-solid fa-money-bill-trend-up"></i>
+                          <p>Transaksi Masuk</p>
+                      </a>
+                  </li>
+                  <li class="nav-item">
+                      <a href="{{ route('transaksi-keluar') }}" class="nav-link">
+                          <i class="fas fa-solid fa-wallet"></i>
+                          <p>Transaksi keluar</p>
                       </a>
                   </li>
                   <li class="nav-header">Riwayat dan laporan</li>
                   <li class="nav-item">
-                      <a href="./docs/introduction.html" class="nav-link">
+                      <a href="{{ route('riwayat-transaksi') }}" class="nav-link">
                           <i class="nav-icon bi bi-arrow-repeat"></i>
-                          <p>Riwayat Pembelian</p>
+                          <p>Riwayat Transaksi</p>
                       </a>
                   </li>
                   <li class="nav-item">
-                      <a href="./docs/introduction.html" class="nav-link">
+                      <a href="{{ route('form-laporan') }}" class="nav-link">
                           <i class="nav-icon bi bi-cart-check"></i>
                           <p>Laporan</p>
                       </a>

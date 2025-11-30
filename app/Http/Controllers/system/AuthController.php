@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -33,12 +34,13 @@ class AuthController extends Controller
                 $responseData = $response->json();
 
                 if (isset($responseData['access_token'])) {
-                    // Simpan semua data token ke session
-                    session([
-                        'access_token' => $responseData['access_token'],
-                        'token_type' => $responseData['token_type'] ?? 'bearer',
-                        'expires_in' => $responseData['expires_in'] ?? 3600
-                    ]);
+                    // Simpan token ke session satu per satu
+                    $request->session()->put('access_token', $responseData['access_token']);
+                    $request->session()->put('token_type', $responseData['token_type'] ?? 'bearer');
+                    $request->session()->put('expires_in', $responseData['expires_in'] ?? 3600);
+                    $request->session()->save();
+                    $request->session()->regenerate();
+
 
                     return redirect()->route('/')->with('success', 'Login successful!')
                         ->with('swal', true);
