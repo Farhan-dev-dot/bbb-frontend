@@ -292,12 +292,12 @@
                           <p>Master Barang</p>
                       </a>
                   </li>
-                  <li class="nav-item">
+                  {{-- <li class="nav-item">
                       <a href="{{ route('master-customer') }}" class="nav-link">
                           <i class="nav-icon bi bi-person-badge-fill"></i>
                           <p>Master Pelanggan </p>
                       </a>
-                  </li>
+                  </li> --}}
                   <li class="nav-header">Transaksi</li>
                   <li class="nav-item">
                       <a href="{{ route('transaksi-masuk') }}" class="nav-link">

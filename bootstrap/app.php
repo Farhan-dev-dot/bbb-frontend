@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \Illuminate\Session\Middleware\StartSession::class,
         ]);
+
+        $middleware->alias([
+            'check.token' => \App\Http\Middleware\CheckApiToken::class,
+            'validate.token' => \App\Http\Middleware\ValidateApiToken::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -407,7 +407,12 @@ class HomeController extends Controller
 
     public function logout(Request $request)
     {
-        $request->session()->forget('access_token');
-        return redirect()->route('login');
+        // Hapus semua data session yang terkait autentikasi
+        $request->session()->forget(['access_token', 'token_type', 'expires_in', 'login_time']);
+
+        // Regenerate session ID untuk keamanan
+        $request->session()->regenerate();
+
+        return redirect()->route('login')->with('success', 'Anda telah berhasil logout.');
     }
 }

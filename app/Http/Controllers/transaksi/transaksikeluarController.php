@@ -168,4 +168,15 @@ class transaksikeluarController extends Controller
             return response()->json(['error' => 'Gagal mengambil data customer'], 500);
         }
     }
+
+    public function deleteData(Request $request, $id)
+    {
+        $apiUrl = env('APIURL');
+        $token = 'Bearer ' . session('access_token');
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+        ])->delete($apiUrl . '/api/barang-keluar/' . $id);
+        return response()->json($response->json(), $response->status());
+    }
 }
