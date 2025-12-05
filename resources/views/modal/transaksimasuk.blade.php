@@ -26,7 +26,7 @@
 
                     <div class="col-md-6">
                         <label for="no_telfon" class="form-label">
-                            No. Telepon <span class="text-danger">*</span>
+                            Telepon <span class="text-danger">*</span>
                         </label>
                         <input type="text" class="form-control" id="no_telfon" name="no_telfon"
                             placeholder="Masukkan no. telepon">
