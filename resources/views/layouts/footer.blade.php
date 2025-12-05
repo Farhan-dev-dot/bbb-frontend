@@ -3,10 +3,10 @@
      <div class="float-end d-none d-sm-inline">Anything you want</div>
      <!--end::To the end-->
      <!--begin::Copyright-->
-     <strong>
-         Copyright &copy; 2014-2025&nbsp;
-         <a href="https://adminlte.io" class="text-decoration-none">AdminLTE.io</a>.
+     <strong class="text-muted">
+         &copy; 2025 <span class="fw-bold">Andri Abdul Halim</span> — Crafting Digital Experiences.
      </strong>
+
      All rights reserved.
      <!--end::Copyright-->
  </footer>

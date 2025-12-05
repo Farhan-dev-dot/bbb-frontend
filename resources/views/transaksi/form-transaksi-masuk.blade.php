@@ -88,7 +88,7 @@
         var modeDraft = 0;
         var dataTransaksi = [];
         var daftarBarang = [];
-        var daftarCustomer = [];
+        var itemsTransaksi = [];
 
         // ==================== INISIALISASI DOKUMEN ====================
         $(document).ready(function() {
@@ -126,15 +126,46 @@
                 bukaFormTambahData();
             });
 
-            // Event perubahan customer
-            $('#id_customer').on('change', function() {
-                updateKodeCustomer();
-            });
-
             // Event perubahan barang
             $('#id_barang').on('change', function() {
                 updateKodeBarang();
             });
+
+            // Event untuk input angka saja pada telepon
+            $('#no_telfon').on('input', function() {
+                this.value = this.value.replace(/[^0-9\-\+\(\)\s]/g, '');
+            });
+
+            // Event untuk validasi email realtime (disabled)
+            // $('#email').on('blur', function() {
+            //     validateEmail($(this).val());
+            // });
+
+            // Auto update summary saat input berubah
+            $('#jumlah_isi, #jumlah_kosong').on('input', function() {
+                updateSummary();
+            });
+        }
+
+        // ==================== FUNGSI VALIDASI ====================
+        function validateForm() {
+            // Validasi sederhana dengan SweetAlert
+            const namaCustomer = $('#nama_customer').val();
+            const idBarang = $('#id_barang').val();
+            const jumlahIsi = parseInt($('#jumlah_isi').val()) || 0;
+            const jumlahKosong = parseInt($('#jumlah_kosong').val()) || 0;
+
+            if (!namaCustomer || namaCustomer.trim() === '' || !idBarang || (jumlahIsi <= 0 && jumlahKosong <= 0)) {
+                Swal.fire({
+                    title: 'Data Tidak Lengkap',
+                    text: 'Mohon lengkapi data',
+                    icon: 'warning',
+                    target: document.getElementById('Modalbody')
+                });
+                return false;
+            }
+
+            return true;
         }
 
         // ==================== FUNGSI AMBIL DATA ====================
@@ -149,17 +180,17 @@
                     keyword: $('#keyword').val(),
                 },
                 success: function(response) {
-                    dataTransaksi = response.penerimaan;
+                    dataTransaksi = response.penerimaan || response.data || [];
 
-                    // Isi dropdown terlebih dahulu
+                    // Isi dropdown barang
                     isiDropdownBarang();
-                    isiDropdownCustomer();
 
                     // Tampilkan data ke tabel
                     tampilkanDataKeTable(dataTransaksi);
                     tampilkanPaginasi(response);
                 },
                 error: function(xhr, status, error) {
+                    console.error('Error fetching data:', error);
                     Swal.fire({
                         title: 'Kesalahan!',
                         text: 'Gagal mengambil data transaksi masuk.',
@@ -180,7 +211,7 @@
         }
 
         function formatTanggalDatabase(tanggalStr) {
-            if (!tanggalStr) return '';
+            if (!tanggalStr) return new Date().toISOString().split('T')[0];
 
             // Jika objek Date
             if (tanggalStr instanceof Date) {
@@ -210,24 +241,29 @@
 
         // ==================== FUNGSI TAMBAH DATA ====================
         function bukaFormTambahData() {
+            // Reset form dan variabel
+            $('#form-data').trigger('reset');
+            itemsTransaksi = [];
+            resetTabelItem();
+
             // Aktifkan semua input
             $('#form-data input, #form-data select, #btnTambahItem, #btn-save').prop('disabled', false);
-
-            if (modeDraft == 0) {
-                $('#form-data').trigger('reset');
-                resetTabelItem();
-            }
 
             $('#id_masuk').val('');
             modeDraft = 1;
             $('#Modal-title').html('Tambah Data Transaksi Masuk');
-            $('#Modalbody').modal('show');
 
             // Set tanggal hari ini
-            $('#tanggal_masuk').val(formatTanggal(new Date()));
+            const today = new Date().toISOString().split('T')[0];
+            $('#tanggal_masuk').val(today);
 
             // Reset nilai default
-            $('#jumlah_isi, #jumlah_kosong, #pinjam_tabung').val(0);
+            $('#jumlah_isi, #jumlah_kosong').val(0);
+
+            // Update summary
+            updateSummary();
+
+            $('#Modalbody').modal('show');
         }
 
         // ==================== FUNGSI LIHAT DETAIL ====================
@@ -259,7 +295,7 @@
             tbody.empty();
 
             if (!dataTransaksi || dataTransaksi.length === 0) {
-                tbody.append('<tr><td colspan="6" class="text-center">Tidak ada data ditemukan</td></tr>');
+                tbody.append('<tr><td colspan="8" class="text-center">Tidak ada data ditemukan</td></tr>');
                 return;
             }
 
@@ -278,10 +314,12 @@
                     '</button>' +
                     '</div>' +
                     '</td>' +
-                    '<td>' + (item.customer ? item.customer.nama_customer : '-') + '</td>' +
+                    '<td>' + (item.nama_customer || '-') + '</td>' +
+                    '<td>' + (item.barang?.nama_barang || item.nama_barang || '-') + '</td>' +
                     '<td class="text-center">' + (item.jumlah_isi || 0) + '</td>' +
                     '<td class="text-center">' + (item.jumlah_kosong || 0) + '</td>' +
-                    '<td class="text-center">' + (item.pinjam_tabung || 0) + '</td>' +
+                    '<td>' + (item.email || '-') + '</td>' +
+                    '<td>' + (item.no_telfon || '-') + '</td>' +
                     '<td class="text-center">' + formatTanggal(item.tanggal_masuk) + '</td>' +
                     '</tr>';
                 tbody.append(baris);
@@ -291,8 +329,8 @@
         // ==================== FUNGSI PAGINASI ====================
         function tampilkanPaginasi(data) {
             var htmlPaginasi = '<ul class="pagination">';
-            var halamanSekarang = data.currentPage || data.current_page;
-            var totalHalaman = data.totalPage || data.total_page;
+            var halamanSekarang = data.currentPage || data.current_page || 1;
+            var totalHalaman = data.totalPage || data.total_page || 1;
 
             // Tombol First & Previous
             if (halamanSekarang > 1) {
@@ -370,68 +408,7 @@
             });
         }
 
-        function isiDropdownCustomer() {
-            var dropdown = $('#id_customer');
-            var nilaiSebelumnya = dropdown.val();
-
-            dropdown.empty();
-            dropdown.append('<option value="">-- Pilih Customer --</option>');
-            daftarCustomer = [];
-
-            $.ajax({
-                url: '/transaksi-keluar/customer-list',
-                type: 'GET',
-                success: function(response) {
-                    var dataCustomer = Array.isArray(response) ? response : response.data || [];
-
-                    if (dataCustomer.length > 0) {
-                        var customerUnik = {};
-
-                        dataCustomer.forEach(function(item) {
-                            if (!customerUnik[item.id_customer]) {
-                                customerUnik[item.id_customer] = true;
-
-                                daftarCustomer.push({
-                                    id_customer: item.id_customer,
-                                    kode_customer: item.kode_customer,
-                                    nama_customer: item.nama_customer
-                                });
-
-                                dropdown.append('<option value="' + item.id_customer + '">' + item
-                                    .nama_customer + '</option>');
-                            }
-                        });
-                    }
-
-                    if (dropdown.children('option').length === 1) {
-                        dropdown.append('<option value="" disabled>Customer tidak tersedia</option>');
-                    }
-
-                    if (nilaiSebelumnya) {
-                        dropdown.val(nilaiSebelumnya);
-                    }
-                },
-                error: function() {
-                    dropdown.append('<option value="" disabled>Gagal mengambil data customer</option>');
-                }
-            });
-        }
-
         // ==================== FUNGSI UPDATE DROPDOWN ====================
-        function updateKodeCustomer() {
-            var idTerpilih = $('#id_customer').val();
-
-            if (idTerpilih && daftarCustomer.length > 0) {
-                var customerTerpilih = daftarCustomer.find(item => item.id_customer == idTerpilih);
-
-                if (customerTerpilih) {
-                    $('#kode_customer').val(customerTerpilih.kode_customer || '');
-                }
-            } else {
-                $('#kode_customer').val('');
-            }
-        }
-
         function updateKodeBarang() {
             var idTerpilih = $('#id_barang').val();
 
@@ -439,12 +416,11 @@
                 var barangTerpilih = daftarBarang.find(item => item.id_barang == idTerpilih);
 
                 if (barangTerpilih) {
-                    $('#kode_barang').val(barangTerpilih.kode_barang || '');
-                    $('#harga_satuan').val(barangTerpilih.harga_jual || '');
+                    // Set informasi barang jika ada field tersembunyi
+                    if ($('#kode_barang').length) {
+                        $('#kode_barang').val(barangTerpilih.kode_barang || '');
+                    }
                 }
-            } else {
-                $('#kode_barang').val('');
-                $('#harga_satuan').val('');
             }
         }
 
@@ -457,24 +433,17 @@
                     var data = Array.isArray(response.data) ? response.data[0] : response.data;
 
                     // Bersihkan tabel
-                    $('#tableItemList').html('');
+                    resetTabelItem();
+                    itemsTransaksi = [];
 
                     // Set ID tersembunyi
                     $('#id_masuk').val(data.id_masuk || '');
 
-                    // Set Customer
-                    if (data.customer && data.customer.id_customer) {
-                        if ($('#id_customer option[value="' + data.customer.id_customer + '"]').length === 0) {
-                            $('#id_customer').append(new Option(
-                                data.customer.nama_customer,
-                                data.customer.id_customer,
-                                false,
-                                false
-                            ));
-                        }
-                        $('#id_customer').val(data.customer.id_customer);
-                        $('#kode_customer').val(data.customer.kode_customer || '');
-                    }
+                    // Set data supplier
+                    $('#nama_customer').val(data.nama_customer || '');
+                    $('#email').val(data.email || '');
+                    $('#no_telfon').val(data.no_telfon || '');
+                    $('#alamat').val(data.alamat || '');
 
                     // Set Barang
                     if (data.barang && data.barang.id_barang) {
@@ -487,33 +456,40 @@
                             ));
                         }
                         $('#id_barang').val(data.barang.id_barang);
-                        $('#kode_barang').val(data.barang.kode_barang || '');
-                        $('#harga_satuan').val(data.barang.harga_jual || '');
+                    } else if (data.id_barang) {
+                        $('#id_barang').val(data.id_barang);
                     }
 
                     // Set Tanggal
                     if (data.tanggal_masuk) {
-                        $('#tanggal_masuk').val(formatTanggal(data.tanggal_masuk));
+                        $('#tanggal_masuk').val(formatTanggalDatabase(data.tanggal_masuk));
                     }
 
                     // Set Informasi Tabung
                     $('#jumlah_isi').val(data.jumlah_isi || 0);
                     $('#jumlah_kosong').val(data.jumlah_kosong || 0);
-                    $('#pinjam_tabung').val(data.pinjam_tabung || 0);
                     $('#keterangan').val(data.keterangan || '');
 
-                    // Tambah ke tabel
-                    tambahBarisKeTable({
-                        namabarang: data.barang ? data.barang.nama_barang : '-',
-                        namacustomer: data.customer ? data.customer.nama_customer : '-',
-                        jumlahisi: data.jumlah_isi || 0,
-                        jumlahkosong: data.jumlah_kosong || 0,
-                        pinjamtabung: data.pinjam_tabung || 0,
-                        keterangan: data.keterangan || '-',
-                        mode: 'view'
+                    // Tambah ke array items
+                    itemsTransaksi.push({
+                        id_barang: data.id_barang || data.barang?.id_barang,
+                        nama_barang: data.nama_barang || data.barang?.nama_barang,
+                        nama_customer: data.nama_customer,
+                        email: data.email,
+                        no_telfon: data.no_telfon,
+                        alamat: data.alamat,
+                        jumlah_isi: data.jumlah_isi || 0,
+                        jumlah_kosong: data.jumlah_kosong || 0,
+                        keterangan: data.keterangan,
+                        tanggal_masuk: data.tanggal_masuk
                     });
+
+                    // Render tabel dan update summary
+                    renderTabelItem();
+                    updateSummary();
                 },
                 error: function(xhr) {
+                    console.error('Error fetching data by ID:', xhr);
                     Swal.fire({
                         title: 'Kesalahan',
                         text: 'Terjadi kesalahan: ' + (xhr.responseJSON?.message || 'Unknown error'),
@@ -525,178 +501,206 @@
 
         // ==================== FUNGSI TAMBAH ITEM ====================
         function tambahItemKeTable() {
-            var namaBarang = $('#id_barang option:selected').text();
-            var namaCustomer = $('#id_customer option:selected').text();
-            var jumlahIsi = parseInt($('#jumlah_isi').val()) || 0;
-            var jumlahKosong = parseInt($('#jumlah_kosong').val()) || 0;
-            var pinjamTabung = parseInt($('#pinjam_tabung').val()) || 0;
-            var keterangan = $('#keterangan').val() || '-';
-
-            // Validasi
-            if (!$('#id_barang').val() || !$('#id_customer').val() || namaCustomer === '-- Pilih Customer --') {
-                Swal.fire({
-                    title: 'Peringatan',
-                    text: 'Mohon pilih barang dan customer yang valid',
-                    icon: 'warning'
-                });
+            if (!validateForm()) {
                 return;
             }
 
-            // Hapus placeholder jika ada
-            if ($('#tableItemList tr td').attr('colspan') == '7') {
-                $('#tableItemList').html('');
-            }
+            const formData = getFormData();
 
-            // Tambah baris baru
-            tambahBarisKeTable({
-                namabarang: namaBarang,
-                namacustomer: namaCustomer,
-                jumlahisi: jumlahIsi,
-                jumlahkosong: jumlahKosong,
-                pinjamtabung: pinjamTabung,
-                keterangan: keterangan,
-                mode: 'edit'
-            });
+            // Cek duplikasi berdasarkan barang dan supplier
+            const existing = itemsTransaksi.find(item =>
+                item.id_barang === formData.id_barang &&
+                item.nama_customer === formData.nama_customer
+            );
+
+            if (existing) {
+                Swal.fire({
+                    title: 'Item Sudah Ada',
+                    text: 'Item dengan barang dan supplier yang sama sudah ditambahkan. Apakah ingin menggabungkan?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Gabungkan',
+                    cancelButtonText: 'Batal',
+                    target: document.getElementById('Modalbody')
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        existing.jumlah_isi += formData.jumlah_isi;
+                        existing.jumlah_kosong += formData.jumlah_kosong;
+                        existing.keterangan = `${existing.keterangan} | ${formData.keterangan}`;
+                        renderTabelItem();
+                        clearItemForm();
+                        updateSummary();
+                    }
+                });
+            } else {
+                itemsTransaksi.push(formData);
+                renderTabelItem();
+                clearItemForm();
+                updateSummary();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Item Ditambahkan',
+                    text: 'Item berhasil ditambahkan ke daftar transaksi',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    target: document.getElementById('Modalbody')
+                });
+            }
         }
 
-        function tambahBarisKeTable(item) {
-            // Hapus placeholder jika ada
-            if ($('#tableItemList tr td').attr('colspan') == '7') {
-                $('#tableItemList').html('');
+        function getFormData() {
+            const namaBarang = $('#id_barang option:selected').text();
+
+            return {
+                id_barang: parseInt($('#id_barang').val()),
+                nama_barang: namaBarang,
+                nama_customer: $('#nama_customer').val().trim(),
+                alamat: $('#alamat').val().trim(),
+                email: $('#email').val().trim(),
+                no_telfon: $('#no_telfon').val().trim(),
+                jumlah_isi: parseInt($('#jumlah_isi').val()) || 0,
+                jumlah_kosong: parseInt($('#jumlah_kosong').val()) || 0,
+                keterangan: $('#keterangan').val().trim(),
+                tanggal_masuk: $('#tanggal_masuk').val()
+            };
+        }
+
+        function clearItemForm() {
+            $('#id_barang').val('');
+            $('#jumlah_isi').val(0);
+            $('#jumlah_kosong').val(0);
+            $('#keterangan').val('');
+        }
+
+        function renderTabelItem() {
+            const tbody = $('#tableItemList');
+
+            if (itemsTransaksi.length === 0) {
+                resetTabelItem();
+                return;
             }
 
-            var tombolAksi = item.mode === 'view' ? '' :
-                `<button type="button" class="btn btn-danger btn-sm" onclick="hapusItem(this)">
-                    <i class="fas fa-trash"></i>
-                </button>`;
-
-            var barisBaru = `
-                <tr>
-                    <td>${item.namabarang}</td>
-                    <td>${item.namacustomer}</td>
-                    <td class="text-center">${item.jumlahisi}</td>
-                    <td class="text-center">${item.jumlahkosong}</td>
-                    <td class="text-center">${item.pinjamtabung}</td>
-                    <td>${item.keterangan}</td>
-                    <td class="text-center">${tombolAksi}</td>
-                </tr>
-            `;
-
-            $('#tableItemList').append(barisBaru);
+            let html = '';
+            itemsTransaksi.forEach((item, index) => {
+                html += `
+                    <tr>
+                        <td>${item.nama_barang}</td>
+                        <td>${item.nama_customer}</td>
+                        <td>${item.email}</td>
+                        <td>${item.no_telfon}</td>
+                        <td class="text-center">${item.jumlah_isi}</td>
+                        <td class="text-center">${item.jumlah_kosong}</td>
+                        <td class="text-center">${formatTanggal(item.tanggal_masuk)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-danger btn-sm" onclick="hapusItem(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.html(html);
         }
 
         // ==================== FUNGSI HAPUS ITEM ====================
-        function hapusItem(tombol) {
-            $(tombol).closest('tr').remove();
+        function hapusItem(index) {
+            Swal.fire({
+                title: 'Hapus Item',
+                text: 'Apakah Anda yakin ingin menghapus item ini?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Hapus',
+                cancelButtonText: 'Batal',
+                target: document.getElementById('Modalbody')
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    itemsTransaksi.splice(index, 1);
+                    renderTabelItem();
+                    updateSummary();
 
-            // Jika tidak ada item, tampilkan placeholder
-            if ($('#tableItemList tr').length === 0) {
-                resetTabelItem();
-            }
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Item Dihapus',
+                        timer: 1000,
+                        showConfirmButton: false,
+                        target: document.getElementById('Modalbody')
+                    });
+                }
+            });
         }
 
         function resetTabelItem() {
             $('#tableItemList').html(
-                '<tr><td colspan="7" class="text-center">-- Belum ada item ditambahkan --</td></tr>'
+                '<tr><td colspan="8" class="text-center">-- Belum ada item ditambahkan --</td></tr>'
             );
+        }
+
+        // ==================== FUNGSI UPDATE SUMMARY ====================
+        function updateSummary() {
+            const totalIsi = itemsTransaksi.reduce((sum, item) => sum + (item.jumlah_isi || 0), 0);
+            const totalKosong = itemsTransaksi.reduce((sum, item) => sum + (item.jumlah_kosong || 0), 0);
+            const totalItem = itemsTransaksi.length;
+
+            $('#totalTabungIsi').text(totalIsi);
+            $('#totalTabungKosong').text(totalKosong);
+            $('#totalItem').text(totalItem);
         }
 
         // ==================== FUNGSI SIMPAN DATA ====================
         function simpanData() {
-            var idMasuk = $('#id_masuk').val();
-            var urlAjax = '';
-            var tipeAjax = '';
-            var pesanSukses = '';
-
-            // Validasi minimal 1 item
-            // if ($('#tableItemList tr td[colspan]').length > 0 || $('#tableItemList tr').length === 0) {
-            //     Swal.fire({
-            //         target: document.getElementById('Modalbody'),
-            //         title: 'Peringatan',
-            //         text: 'Mohon tambahkan minimal 1 item transaksi',
-            //         icon: 'warning'
-            //     });
-            //     return;
-            // }
-
-            // Kumpulkan semua item dari tabel
-            var daftarItem = [];
-            $('#tableItemList tr').each(function() {
-                var kolom = $(this).find('td');
-
-                if (kolom.length >= 6 && !kolom.eq(0).attr('colspan')) {
-                    var idBarang = cariIdBarangDariNama(kolom.eq(0).text());
-                    var idCustomer = cariIdCustomerDariNama(kolom.eq(1).text());
-
-                    if (!idBarang || !idCustomer) {
-                        return true; // lanjut ke iterasi berikutnya
-                    }
-
-                    daftarItem.push({
-                        id_barang: parseInt(idBarang),
-                        id_customer: idCustomer,
-                        jumlah_isi: parseInt(kolom.eq(2).text()) || 0,
-                        jumlah_kosong: parseInt(kolom.eq(3).text()) || 0,
-                        pinjam_tabung: parseInt(kolom.eq(4).text()) || 0,
-                        keterangan: kolom.eq(5).text() || '',
-                        tanggal_masuk: formatTanggalDatabase($('#tanggal_masuk').val() || new Date())
-                    });
-                }
-            });
-
-            // Jika tidak ada item dari tabel, ambil dari form
-            if (daftarItem.length === 0) {
-                var idBarang = parseInt($('#id_barang').val());
-                var idCustomer = $('#id_customer').val();
-
-                if (!idBarang || !idCustomer) {
-                    Swal.fire({
-                        target: document.getElementById('Modalbody'),
-                        title: 'Peringatan',
-                        text: 'Mohon pilih barang dan customer',
-                        icon: 'warning'
-                    });
-                    return;
-                }
-
-                daftarItem.push({
-                    id_barang: idBarang,
-                    id_customer: idCustomer,
-                    jumlah_isi: parseInt($('#jumlah_isi').val()) || 0,
-                    jumlah_kosong: parseInt($('#jumlah_kosong').val()) || 0,
-                    pinjam_tabung: parseInt($('#pinjam_tabung').val()) || 0,
-                    keterangan: $('#keterangan').val() || '',
-                    tanggal_masuk: formatTanggalDatabase($('#tanggal_masuk').val() || new Date())
+            if (itemsTransaksi.length === 0) {
+                Swal.fire({
+                    title: 'Peringatan',
+                    text: 'Belum ada item yang ditambahkan',
+                    icon: 'warning',
+                    target: document.getElementById('Modalbody')
                 });
+                return;
             }
 
-            // Setup AJAX
-            var dataKirim;
+            // Konfirmasi penyimpanan
+            Swal.fire({
+                title: 'Simpan Transaksi',
+                text: `Apakah Anda yakin ingin menyimpan ${itemsTransaksi.length} item transaksi masuk?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Simpan',
+                cancelButtonText: 'Batal',
+                target: document.getElementById('Modalbody')
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    prosesSimapanData();
+                }
+            });
+        }
+
+        function prosesSimapanData() {
+            const idMasuk = $('#id_masuk').val();
+            let urlAjax = '';
+            let tipeAjax = '';
+            let pesanSukses = '';
+            let dataKirim = {};
+
+            // Disable tombol save
+            $('#btn-save').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+
             if (idMasuk) {
                 // Mode UPDATE
                 urlAjax = '/transaksi-masuk/update-data/' + idMasuk;
                 tipeAjax = 'PATCH';
                 pesanSukses = 'Data transaksi masuk berhasil diupdate.';
-                dataKirim = {
-                    id_barang: parseInt($('#id_barang').val()),
-                    id_customer: $('#id_customer').val(),
-                    jumlah_isi: parseInt($('#jumlah_isi').val()) || 0,
-                    jumlah_kosong: parseInt($('#jumlah_kosong').val()) || 0,
-                    pinjam_tabung: parseInt($('#pinjam_tabung').val()) || 0,
-                    keterangan: $('#keterangan').val() || '',
-                    tanggal_masuk: formatTanggalDatabase($('#tanggal_masuk').val() || new Date())
-                };
+                dataKirim = itemsTransaksi[0]; // Untuk update, ambil item pertama
             } else {
                 // Mode INSERT
                 urlAjax = '/transaksi-masuk/insert-data';
                 tipeAjax = 'POST';
                 pesanSukses = 'Data transaksi masuk berhasil disimpan.';
                 dataKirim = {
-                    data: daftarItem
+                    data: itemsTransaksi
                 };
             }
 
-            // Kirim data
             $.ajax({
                 url: urlAjax,
                 type: tipeAjax,
@@ -710,13 +714,18 @@
                         title: 'Sukses',
                         text: pesanSukses,
                         icon: 'success'
+                    }).then(() => {
+                        $('#Modalbody').modal('hide');
+                        $('#form-data').trigger('reset');
+                        itemsTransaksi = [];
+                        resetTabelItem();
+                        updateSummary();
+                        ambilDataTransaksi();
                     });
-                    $('#Modalbody').modal('hide');
-                    $('#form-data').trigger('reset');
-                    resetTabelItem();
-                    ambilDataTransaksi();
                 },
                 error: function(xhr, status, error) {
+                    console.error('Error saving data:', xhr);
+
                     var pesanError = 'Terjadi kesalahan';
 
                     if (xhr.status === 422 && xhr.responseJSON?.errors) {
@@ -725,8 +734,8 @@
                         pesanError = Array.isArray(errorPertama) ? errorPertama[0] : errorPertama;
                     } else if (xhr.responseJSON?.message) {
                         pesanError = xhr.responseJSON.message;
-                    } else {
-                        pesanError = error || 'Unknown error';
+                    } else if (error) {
+                        pesanError = error;
                     }
 
                     Swal.fire({
@@ -739,20 +748,10 @@
                     });
                 },
                 complete: function() {
-                    $('#btn-save').prop('disabled', false).html('Simpan');
+                    $('#btn-save').prop('disabled', false).html(
+                        '<i class="fas fa-save me-1"></i>Simpan Transaksi');
                 }
             });
-        }
-
-        // ==================== FUNGSI HELPER PENCARIAN ====================
-        function cariIdBarangDariNama(namaBarang) {
-            var barang = daftarBarang.find(item => item.nama_barang === namaBarang.trim());
-            return barang ? barang.id_barang : null;
-        }
-
-        function cariIdCustomerDariNama(namaCustomer) {
-            var customer = daftarCustomer.find(item => item.nama_customer === namaCustomer.trim());
-            return customer ? customer.id_customer : null;
         }
     </script>
 @endpush
