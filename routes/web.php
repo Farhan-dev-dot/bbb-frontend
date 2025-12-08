@@ -74,6 +74,7 @@ Route::middleware(['check.token'])->group(function () {
     Route::get('/riwayat-transaksi/getdata', [riwayatContoller::class, 'getData']);
     Route::get('/riwayat-transaksi/cetak', [riwayatContoller::class, 'Cetakprint']);
     Route::post('/riwayat-transaksi/export', [riwayatContoller::class, 'exportExcel']);
+    Route::delete('/riwayat-transaksi/delete-data/{id}', [riwayatContoller::class, 'deleteRiwayat']);
 
     // Report Routes
     Route::get('/form-laporan', [LaporanContoller::class, 'index'])->name('form-laporan');

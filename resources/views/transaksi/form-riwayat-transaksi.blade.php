@@ -1,10 +1,10 @@
 @extends('layouts.master')
 
-@section('title', 'Riwayat Transaksi')
+@section('title', 'Mutasi Stok')
 
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('/') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Riwayat Transaksi</li>
+    <li class="breadcrumb-item active">Mutasi Stok</li>
 @endsection
 
 @section('content')
@@ -69,15 +69,18 @@
                     <table class="table table-bordered" id="tabel-data">
                         <thead>
                             <tr>
+                                <th style="width: 8%;">Aksi</th>
                                 <th>Nama Barang</th>
-                                <th>Tipe Transaksi</th>
+                                <th>Kapasitas</th>
+                                <th>Isi Sistem</th>
+                                <th>Kosong Sistem</th>
+                                <th>Isi Fisik</th>
+                                <th>Kosong Fisik</th>
+                                <th>Selisih Isi</th>
+                                <th>Selisih Kosong</th>
+                                <th>Total Selisih</th>
                                 <th>Tanggal</th>
-                                <th>Perubahan Isi</th>
-                                <th>Perubahan Kosong</th>
-                                <th>Tabung Isi Awal</th>
-                                <th>Tabung Kosong Awal</th>
-                                <th>Tabung Isi Setelah</th>
-                                <th>Tabung Kosong Setelah</th>
+                                <th>Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -227,30 +230,126 @@
 
         // FUNGSI: TAMPILKAN DATA KE TABLE
         // ============================================
-        function tampilkanDataKeTable(datas) {
+        function tampilkanDataKeTable(dataBarang) {
             var isiTabel = $('#tabel-data tbody');
             isiTabel.empty();
 
-            if (!datas || datas.length === 0) {
-                isiTabel.append('<tr><td colspan="9" class="text-center">Tidak ada data ditemukan</td></tr>');
+            if (!dataBarang || dataBarang.length === 0) {
+                isiTabel.append('<tr><td colspan="12" class="text-center">Tidak ada data ditemukan</td></tr>');
                 return;
             }
 
-            $.each(datas, function(indeks, items) {
+            $.each(dataBarang, function(indeks, items) {
+                // Ambil data stok
+                var stokSistem = items.stok_sistem || {};
+                var stokFisik = items.stok_fisik_terakhir || {};
+                var selisih = items.selisih || {};
+
                 var barisTabel =
                     '<tr>' +
-                    '<td class="text-center">' + (items.barang.nama_barang ?? '') + '</td>' +
-                    '<td class="text-center">' + (items.tipe_transaksi ?? '') + '</td>' +
-                    '<td class="text-center">' + formatTanggal(items.tanggal_transaksi) + '</td>' +
-                    '<td class="text-center" >' + (items.perubahan_isi ?? 0) + '</td>' +
-                    '<td class="text-center" >' + (items.perubahan_kosong ?? 0) + '</td>' +
-                    '<td class="text-center" >' + (items.stok_awal_isi ?? 0) + '</td>' +
-                    '<td class="text-center" >' + (items.stok_awal_kosong ?? 0) + '</td>' +
-                    '<td class="text-center" >' + (items.stok_isi_setelah ?? 0) + '</td>' +
-                    '<td class="text-center" >' + (items.stok_kosong_setelah ?? 0) + '</td>' +
+                    '<td class="text-center">' +
+                    '<div class="btn-group btn-group-sm" role="group">' +
+                    '<button class="btn btn-danger" onclick="hapusRiwayat(' + items.id_barang +
+                    ')" title="Hapus">' +
+                    '<i class="fas fa-trash"></i>' +
+                    '</button>' +
+                    '</div>' +
+                    '</td>' +
+                    '<td>' + (items.nama_barang || '-') + '</td>' +
+                    '<td class="text-center">' + (items.kapasitas || '-') + '</td>' +
+                    '<td class="text-center">' + (stokSistem.tabung_isi || 0) + '</td>' +
+                    '<td class="text-center">' + (stokSistem.tabung_kosong || 0) + '</td>' +
+                    '<td class="text-center">' + (stokFisik.tabung_isi !== null ? stokFisik.tabung_isi : '-') +
+                    '</td>' +
+                    '<td class="text-center">' + (stokFisik.tabung_kosong !== null ? stokFisik.tabung_kosong :
+                        '-') + '</td>' +
+                    '<td class="text-center ' + getSelisihClass(selisih.tabung_isi) + '">' + (selisih.tabung_isi !==
+                        null ? selisih.tabung_isi : '-') + '</td>' +
+                    '<td class="text-center ' + getSelisihClass(selisih.tabung_kosong) + '">' + (selisih
+                        .tabung_kosong !== null ? selisih.tabung_kosong : '-') + '</td>' +
+                    '<td class="text-center ' + getSelisihClass(selisih.total) + '">' + (selisih.total !== null ?
+                        selisih.total : '-') + '</td>' +
+                    '<td class="text-center">' + (stokFisik.tanggal_opname ? formatTanggal(stokFisik
+                        .tanggal_opname) : '-') + '</td>' +
+                    '<td>' + (stokFisik.keterangan || '-') + '</td>' +
                     '</tr>';
                 isiTabel.append(barisTabel);
             });
+        }
+
+        function getSelisihClass(nilai) {
+            if (nilai === null || nilai === undefined) return '';
+            if (nilai > 0) return 'text-success fw-bold';
+            if (nilai < 0) return 'text-danger fw-bold';
+            return 'text-muted';
+        }
+
+
+        // ============================================
+        // FUNGSI: HAPUS RIWAYAT
+        // ============================================
+        function hapusRiwayat(idRiwayat) {
+            Swal.fire({
+                title: 'Hapus Riwayat?',
+                text: 'Apakah Anda yakin ingin menghapus data riwayat ini? Tindakan ini tidak dapat dibatalkan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    prosesHapusRiwayat(idRiwayat);
+                }
+            });
+        }
+
+        function prosesHapusRiwayat(idRiwayat) {
+
+            $.ajax({
+                url: '/riwayat-transaksi/delete-data/' + idRiwayat,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                    'Content-Type': 'application/json'
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Data riwayat berhasil dihapus.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        ambilDataTransaksi(1);
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Gagal menghapus data riwayat.';
+                    if (xhr.responseJSON?.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.statusText) {
+                        errorMessage = xhr.statusText;
+                    }
+
+                    Swal.fire({
+                        title: 'Kesalahan!',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+
+                    console.error('Error deleting riwayat:', xhr);
+                }
+            });
+        }
+
+        // ============================================
+        // FUNGSI HELPER: GET ACCESS TOKEN
+        // ============================================
+        function getAccessToken() {
+            // Ambil token dari meta tag atau session storage
+            return document.querySelector('meta[name="access-token"]')?.getAttribute('content') || '';
         }
 
         // ============================================

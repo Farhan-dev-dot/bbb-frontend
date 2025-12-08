@@ -311,13 +311,20 @@
                           <p>Transaksi keluar</p>
                       </a>
                   </li>
-                  <li class="nav-header">Riwayat dan laporan</li>
+                  <li class="nav-header">Laporan</li>
+                  <li class="nav-item">
+                      <a href="" class="nav-link">
+                          <i class="nav-icon bi bi-arrow-repeat"></i>
+                          <p>Riwayat Stok</p>
+                      </a>
+                  </li>
                   <li class="nav-item">
                       <a href="{{ route('riwayat-transaksi') }}" class="nav-link">
                           <i class="nav-icon bi bi-arrow-repeat"></i>
-                          <p>Riwayat Transaksi</p>
+                          <p>Stok Opname</p>
                       </a>
                   </li>
+
                   <li class="nav-item">
                       <a href="{{ route('form-laporan') }}" class="nav-link">
                           <i class="nav-icon bi bi-cart-check"></i>
