@@ -8,20 +8,21 @@
             <div class="modal-body">
                 <form class="row g-3" id="form-data">
                     <input type="hidden" id="id_masuk" name="id_masuk" />
+                    <input type="hidden" id="id_customer" name="id_customer" />
 
                     <!-- Section: Data Supplier -->
                     <div class="col-12">
                         <h6 class="border-bottom pb-2 mb-3" style="color: #FF6C0C">
-                            <i class="fas fa-truck me-2"></i>Data Supplier
+                            <i class="fas fa-truck me-2"></i>Data Pelanggan
                         </h6>
                     </div>
 
                     <div class="col-md-6">
                         <label for="nama_customer" class="form-label">
-                            Nama Supplier <span class="text-danger">*</span>
+                            Nama <span class="text-danger">*</span>
                         </label>
                         <input type="text" class="form-control" id="nama_customer" name="nama_customer"
-                            placeholder="Masukkan nama supplier">
+                            placeholder="Masukkan nama Pelanggan">
                     </div>
 
                     <div class="col-md-6">
@@ -37,7 +38,7 @@
                             Email <span class="text-danger">*</span>
                         </label>
                         <input type="email" class="form-control" id="email" name="email"
-                            placeholder="Masukkan email supplier">
+                            placeholder="Masukkan email Pelanggan">
                     </div>
 
                     <div class="col-md-6">
@@ -125,7 +126,7 @@
                                 <thead class="table-light">
                                     <tr class="text-center">
                                         <th style="width: 15%;">Nama Barang</th>
-                                        <th style="width: 20%;">Nama Supplier</th>
+                                        <th style="width: 20%;">Nama </th>
                                         <th style="width: 15%;">Email</th>
                                         <th style="width: 12%;">No. Telepon</th>
                                         <th style="width: 10%;">Tabung Isi</th>

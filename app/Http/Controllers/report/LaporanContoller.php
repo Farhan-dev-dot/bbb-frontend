@@ -43,7 +43,6 @@ class LaporanContoller extends Controller
     public function exportExcel(Request $request)
     {
         $data = json_decode($request->data, true);
-        // dd($data);
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -55,36 +54,36 @@ class LaporanContoller extends Controller
         $sheet->setCellValue('D1', 'Pengiriman');
         $sheet->setCellValue('E1', 'Penerima');
         $sheet->setCellValue('F1', 'Jenis Tabung');
-        $sheet->setCellValue('G1', 'Tabung Isi');
-        $sheet->setCellValue('H1', 'Tabung Kosong');
-        $sheet->setCellValue('I1', 'Pinjam Tabung');
-        $sheet->setCellValue('J1', 'Harga Satuan');
-        $sheet->setCellValue('K1', 'Total Harga');
-        $sheet->setCellValue('L1', 'Keterangan');
+        $sheet->setCellValue('G1', 'Kapasitas');
+        $sheet->setCellValue('H1', 'Tabung Isi');
+        $sheet->setCellValue('I1', 'Tabung Kosong');
+        $sheet->setCellValue('J1', 'Pinjam Tabung');
+        $sheet->setCellValue('K1', 'Harga Satuan');
+        $sheet->setCellValue('L1', 'Total Harga');
+        $sheet->setCellValue('M1', 'Keterangan');
 
 
         // Isi data
         $row = 2;
         foreach ($data as $i => $item) {
-            $tanggal = '';
-            if (!empty($item['tanggal_transaksi'])) {
-                $tanggal = \Carbon\Carbon::parse($item['tanggal_transaksi'])->format('d/m/Y');
-            }
+            $transaksi = $item['transaksi'] ?? [];
+            $barang = $item['barang'] ?? [];
+            $customer = $item['customer'] ?? [];
 
             $sheet->setCellValue("A{$row}", $i + 1);
-            $sheet->setCellValue("B{$row}", $tanggal);
-            $sheet->setCellValue("C{$row}", $item['transaksi']['customer']['alamat'] ?? '');
-            $sheet->setCellValue("D{$row}", $item['transaksi']['nama_pengirim'] ?? '');
-            $sheet->setCellValue("E{$row}", $item['transaksi']['customer']['nama_customer']  ?? '');
-            $sheet->setCellValue("F{$row}", $item['barang']['nama_barang'] ?? '');
-            $sheet->setCellValue("G{$row}", $item['transaksi']['jumlah_tabung_isi'] ?? '');
-            $sheet->setCellValue("H{$row}", $item['transaksi']['jumlah_tabung_kosong'] ?? '');
-            $sheet->setCellValue("I{$row}", $item['transaksi']['jumlah_pinjam_tabung'] ?? '');
-            $sheet->setCellValue("J{$row}", $item['transaksi']['harga_satuan'] ?? '');
-            $sheet->setCellValue("K{$row}", $item['transaksi']['total_harga'] ?? '');
-            $sheet->setCellValue("L{$row}", $item['transaksi']['metode_pembayaran'] ?? '');
-
-
+            $sheet->setCellValue("B{$row}", $transaksi['tanggal_transaksi'] ?? '');
+            $sheet->setCellValue("C{$row}", $customer['alamat'] ?? '');
+            $sheet->setCellValue("D{$row}", $transaksi['nama_pengirim'] ?? '');
+            $sheet->setCellValue("E{$row}", $customer['nama_customer'] ?? '');
+            $sheet->setCellValue("F{$row}", $barang['nama_barang'] ?? '');
+            $sheet->setCellValue("G{$row}", $barang['kapasitas'] ?? '');
+            $sheet->setCellValue("H{$row}", $transaksi['jumlah_tabung_isi'] ?? '');
+            $sheet->setCellValue("I{$row}", $transaksi['jumlah_tabung_kosong'] ?? '');
+            $sheet->setCellValue("J{$row}", $transaksi['jumlah_pinjam_tabung'] ?? '');
+            $sheet->setCellValue("K{$row}", $transaksi['harga_satuan'] ?? '');
+            $sheet->setCellValue("L{$row}", $transaksi['total_harga'] ?? '');
+            $sheet->setCellValue("M{$row}", $transaksi['keterangan'] ?? '');
+            $sheet->setCellValue("N{$row}", $transaksi['metode_pembayaran'] ?? '');
             $row++;
         }
 

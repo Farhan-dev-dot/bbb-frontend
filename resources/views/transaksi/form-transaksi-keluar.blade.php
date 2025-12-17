@@ -108,11 +108,9 @@
                 if (idBarangTerpilih && daftarSemuaBarang.length > 0) {
                     var barangTerpilih = daftarSemuaBarang.find(item => item.id_barang == idBarangTerpilih);
                     if (barangTerpilih) {
-                        $('#kode_barang').val(barangTerpilih.kode_barang || '');
                         $('#harga_satuan').val(formatRupiah(barangTerpilih.harga_jual || 0));
                     }
                 } else {
-                    $('#kode_barang').val('');
                     $('#harga_satuan').val('Rp 0');
                 }
             });
@@ -283,9 +281,10 @@
                                 barangUnik[itemBarang.id_barang] = true;
                                 daftarSemuaBarang.push({
                                     id_barang: itemBarang.id_barang,
-                                    kode_barang: itemBarang.kode_barang,
                                     nama_barang: itemBarang.nama_barang,
-                                    harga_jual: itemBarang.harga_jual
+                                    harga_jual: itemBarang.harga_jual,
+                                    stok_tabung_isi: itemBarang.stok_tabung_isi || 0,
+                                    stok_tabung_kosong: itemBarang.stok_tabung_kosong || 0
                                 });
                                 selectBarang.append('<option value="' + itemBarang.id_barang + '">' +
                                     itemBarang.nama_barang + '</option>');
@@ -328,6 +327,9 @@
 
             // Reset nilai default
             $('#jumlah_isi, #jumlah_kosong, #pinjam_tabung').val(0);
+
+            // PENTING: Reload data barang untuk memastikan stok terbaru
+            isiDropdownBarang();
         }
 
         // ============================================
@@ -393,7 +395,6 @@
         // ============================================
         function resetFormInput() {
             $('#id_barang').val('');
-            $('#kode_barang').val('');
             $('#harga_satuan').val('Rp 0');
             $('#jumlah_isi, #jumlah_kosong, #pinjam_tabung').val(0);
             $('#keterangan').val('');
@@ -434,7 +435,7 @@
             var idBarangDipilih = $('#id_barang').val();
             var tanggalTransaksi = $('#tanggal_keluar').val();
             var jenisTransaksi = 'penjualan'; // Diperbaiki dari 'keluar' ke 'penjualan'
-            var metodePembayaran = $('#status').val();
+            var metodePembayaran = $('#metode_pembayaran').val();
             var statusPembayaran = 'lunas';
             var namaPengirimInput = $('#nama_pengirim').val();
             var namaCustomerInput = $('#nama_customer').val();
@@ -465,27 +466,20 @@
                 }
 
                 var dataUpdate = {
+                    id_barang: parseInt(idBarangDipilih),
                     nama_customer: namaCustomerInput,
                     alamat: alamatInput,
-                    email: emailInput, // Diperbaiki dari 'email' ke 'email'
-                    telepon: teleponInput, // Diperbaiki dari 'telepon' ke 'telepon'
-                    tanggal_transaksi: tanggalTransaksi, // Diperbaiki dari 'tanggal_keluar'
-                    jenis_transaksi: jenisTransaksi,
-                    metode_pembayaran: metodePembayaran,
-                    status_pembayaran: statusPembayaran,
-                    nama_pengirim: namaPengirimInput,
-                    alamat_pengiriman: alamatInput, // Tambahkan alamat_pengiriman
-                    biaya_pengiriman: 0, // Set default atau ambil dari form jika ada
+                    email: emailInput,
+                    telepon: teleponInput,
+                    jumlah_isi: jumlahTabungIsi,
+                    jumlah_kosong: jumlahTabungKosong,
+                    pinjam_tabung: jumlahPinjamTabung,
+                    harga_satuan: hargaSatuanBarang,
                     keterangan: keteranganTransaksi || '',
-                    items: [{
-                        id_barang: parseInt(idBarangDipilih),
-                        jumlah_isi: jumlahTabungIsi,
-                        jumlah_kosong: jumlahTabungKosong,
-                        jumlah_pinjam_tabung: jumlahPinjamTabung,
-                        harga_satuan: hargaSatuanBarang,
-                        diskon: 0, // Set default atau ambil dari form jika ada
-                        keterangan: keteranganTransaksi || ''
-                    }]
+                    tanggal_transaksi: tanggalTransaksi,
+                    nama_pengirim: namaPengirimInput,
+                    metode_pembayaran: metodePembayaran,
+                    alamat_pengiriman: alamatInput
                 };
 
                 $.ajax({
@@ -528,14 +522,37 @@
             $('#tableItemList tr').each(function() {
                 var kolomTabel = $(this).find('td');
                 if (kolomTabel.length >= 10 && kolomTabel.eq(0).text() !== '-- Belum ada item ditambahkan --') {
+                    var idBarang = cariIdBarangDariNama(kolomTabel.eq(0).text());
+                    var barangData = daftarSemuaBarang.find(b => b.id_barang == idBarang);
+
+                    console.log('Processing item:', {
+                        id_barang: idBarang,
+                        nama_barang: kolomTabel.eq(0).text(),
+                        barangData: barangData,
+                        daftarSemuaBarang: daftarSemuaBarang
+                    });
+
+                    if (!barangData) {
+                        console.error('Barang tidak ditemukan di cache untuk ID:', idBarang);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Data barang "' + kolomTabel.eq(0).text() +
+                                '" tidak ditemukan. Silakan refresh halaman dan coba lagi.',
+                            icon: 'error'
+                        });
+                        return false; // Stop execution
+                    }
+
                     daftarItemTransaksi.push({
-                        id_barang: cariIdBarangDariNama(kolomTabel.eq(0).text()),
+                        id_barang: idBarang,
                         jumlah_isi: parseInt(kolomTabel.eq(3).text()) || 0,
                         jumlah_kosong: parseInt(kolomTabel.eq(4).text()) || 0,
                         jumlah_pinjam_tabung: parseInt(kolomTabel.eq(5).text()) || 0,
                         harga_satuan: parseInt(kolomTabel.eq(6).text().replace(/[^0-9]/g, '')) || 0,
-                        diskon: 0, // Set default atau ambil dari form jika ada
-                        keterangan: kolomTabel.eq(8).text() || ''
+                        diskon: 0,
+                        keterangan: kolomTabel.eq(8).text() || '',
+                        stok_awal_isi: barangData.stok_tabung_isi,
+                        stok_awal_kosong: barangData.stok_tabung_kosong
                     });
                 }
             });
@@ -668,7 +685,6 @@
 
                     // Set Barang
                     if (dataTransaksi.barang) {
-                        $('#kode_barang').val(dataTransaksi.barang.kode_barang || '');
 
                         // Tambahkan option barang jika belum ada
                         if ($('#id_barang option[value="' + dataTransaksi.barang.id_barang + '"]').length ===
@@ -683,11 +699,13 @@
 
                     // Detail Transaksi dari object transaksi
                     $('#nama_pengirim').val(dataTransaksi.nama_pengirim || '');
+                    // console.log('Data Transaksi:', dataTransaksi); // Debug log
                     if (dataTransaksi.transaksi) {
-                        $('#status').val(dataTransaksi.transaksi.metode_pembayaran || '').trigger('change');
+                        $('#metode_pembayaran').val(dataTransaksi.transaksi.metode_pembayaran || '').trigger(
+                            'change');
                     } else {
                         // Fallback ke field langsung
-                        $('#status').val(dataTransaksi.status || '').trigger('change');
+                        $('#metode_pembayaran').val(dataTransaksi.metode_pembayaran || '').trigger('change');
                     }
                     $('#keterangan').val(dataTransaksi.keterangan || '');
 
@@ -839,20 +857,18 @@
         // FUNGSI HELPER: FORMAT RUPIAH
         // ============================================
         function formatRupiah(angka) {
-            if (!angka) return 'Rp 0';
-            var stringAngka = angka.toString().replace(/[^,\d]/g, ''),
-                pisahAngka = stringAngka.split(','),
-                sisaAngka = pisahAngka[0].length % 3,
-                formatRupiah = pisahAngka[0].substr(0, sisaAngka),
-                kelompokRibuan = pisahAngka[0].substr(sisaAngka).match(/\d{3}/gi);
+            if (!angka || angka == 0) return 'Rp 0';
 
-            if (kelompokRibuan) {
-                var pemisah = sisaAngka ? '.' : '';
-                formatRupiah += pemisah + kelompokRibuan.join('.');
-            }
+            // Pastikan angka adalah number, bukan string
+            var nilaiAngka = typeof angka === 'number' ? angka : parseInt(angka);
 
-            formatRupiah = pisahAngka[1] != undefined ? formatRupiah + ',' + pisahAngka[1] : formatRupiah;
-            return 'Rp ' + formatRupiah;
+            // Jika parsing gagal atau hasil tidak valid
+            if (isNaN(nilaiAngka)) return 'Rp 0';
+
+            // Gunakan toLocaleString untuk format yang lebih akurat
+            var formatted = nilaiAngka.toLocaleString('id-ID');
+
+            return 'Rp ' + formatted;
         }
 
         // ============================================

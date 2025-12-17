@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-class riwayatContoller extends Controller
+class stokopnameContoller extends Controller
 {
 
     public function index()
@@ -16,7 +16,7 @@ class riwayatContoller extends Controller
         if (!session()->has('access_token')) {
             return redirect()->route('login');
         }
-        return view('transaksi.form-riwayat-transaksi');
+        return view('transaksi.form-stok-opname');
     }
 
     public function getData(Request $request)
@@ -26,11 +26,11 @@ class riwayatContoller extends Controller
 
         $response = Http::withHeaders([
             'Authorization' => $token,
-        ])->get($apiUrl . '/api/stok-opname/laporanstok', [
+        ])->get($apiUrl . '/api/stok-opname/laporanstok', query: [
             'page' => $request->input('page', 1),
             'tanggal_dari' => $request->input('tanggal_dari'),
             'tanggal_sampai' => $request->input('tanggal_sampai'),
-            'tipe_transaksi' => $request->input('tipe_transaksi'),
+            'nama_barang' => $request->input('nama_barang'),
             'id_barang' => $request->input('id_barang'),
             'per_page' => $request->input('per_page', 10)
         ]);
@@ -38,21 +38,33 @@ class riwayatContoller extends Controller
         if ($response->successful()) {
             $responseData = $response->json();
 
+            // Struktur API baru
             $dataArray = $responseData['data'] ?? [];
-            $riwayat_transaksi = $dataArray['data'] ?? [];
+            $stok_opname = $dataArray['data'] ?? [];
             $summary = $responseData['summary'] ?? [];
 
             // Pagination info
             $currentPage = $dataArray['current_page'] ?? 1;
             $perPage = $dataArray['per_page'] ?? 10;
             $total = $dataArray['total'] ?? 0;
-            $totalPage = $dataArray['last_page'] ?? 1;
+            $totalPage = $dataArray['total_page'] ?? 1;
             $from = $dataArray['from'] ?? null;
             $to = $dataArray['to'] ?? null;
-            $hasNextPage = !empty($dataArray['next_page_url']);
-            $hasPrevPage = !empty($dataArray['prev_page_url']);
+            $hasNextPage = $dataArray['has_next_page'] ?? false;
+            $hasPrevPage = $dataArray['has_prev_page'] ?? false;
 
-            return compact('riwayat_transaksi', 'summary', 'currentPage', 'perPage', 'total', 'totalPage', 'hasNextPage', 'hasPrevPage', 'from', 'to');
+            return response()->json([
+                'stok_opname' => $stok_opname,
+                'summary' => $summary,
+                'currentPage' => $currentPage,
+                'perPage' => $perPage,
+                'total' => $total,
+                'totalPage' => $totalPage,
+                'hasNextPage' => $hasNextPage,
+                'hasPrevPage' => $hasPrevPage,
+                'from' => $from,
+                'to' => $to
+            ]);
         } else {
             $error = $response->json();
             return response()->json([
@@ -83,6 +95,106 @@ class riwayatContoller extends Controller
         return view('cetak.riwayat-transaksi', compact('riwayat'));
     }
 
+    public function getCurrentStok(Request $request)
+    {
+        $apiUrl = env('APIURL');
+        $token = 'Bearer ' . session('access_token');
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+            'Accept' => 'application/json'
+        ])->get($apiUrl . '/api/stok-opname/current-stok', [
+            'id_barang' => $request->input('id_barang')
+        ]);
+
+        if ($response->successful()) {
+            $responseData = $response->json();
+            return response()->json([
+                'success' => true,
+                'message' => $responseData['message'] ?? 'Data stok berhasil diambil',
+                'data' => $responseData['data'] ?? []
+            ]);
+        } else {
+            $error = $response->json();
+            return response()->json([
+                'success' => false,
+                'message' => $error['message'] ?? 'Gagal mengambil data stok',
+                'errors' => $error['errors'] ?? null
+            ], $response->status());
+        }
+    }
+
+    public function getHistory($id_barang)
+    {
+        $apiUrl = env('APIURL');
+        $token = 'Bearer ' . session('access_token');
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+            'Accept' => 'application/json'
+        ])->get($apiUrl . '/api/stok-opname/history/' . $id_barang);
+
+        if ($response->successful()) {
+            $responseData = $response->json();
+            return response()->json([
+                'success' => true,
+                'message' => $responseData['message'] ?? 'History berhasil diambil',
+                'barang' => $responseData['barang'] ?? null,
+                'total_history' => $responseData['total_history'] ?? 0,
+                'history' => $responseData['history'] ?? []
+            ]);
+        } else {
+            $error = $response->json();
+            return response()->json([
+                'success' => false,
+                'message' => $error['message'] ?? 'Gagal mengambil history',
+                'errors' => $error['errors'] ?? null
+            ], $response->status());
+        }
+    }
+
+    public function KoreksiStok(Request $request)
+    {
+        $apiUrl = env('APIURL');
+        $token = 'Bearer ' . session('access_token');
+
+        // Validasi request
+        $request->validate([
+            'corrections' => 'required|array|min:1',
+            'corrections.*.id_barang' => 'required|integer',
+            'corrections.*.stok_isi_fisik' => 'required|integer',
+            'corrections.*.stok_kosong_fisik' => 'required|integer',
+            'corrections.*.keterangan' => 'nullable|string',
+            'tanggal_opname' => 'required|date'
+        ]);
+
+        // Siapkan payload sesuai struktur API
+        $payload = [
+            'corrections' => $request->input('corrections'),
+            'tanggal_opname' => $request->input('tanggal_opname')
+        ];
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+            'Accept' => 'application/json'
+        ])->post($apiUrl . '/api/stok-opname/koreksi', $payload);
+
+        if ($response->successful()) {
+            return response()->json([
+                'success' => true,
+                'message' => $response->json()['message'] ?? 'Koreksi stok berhasil',
+                'data' => $response->json()['data'] ?? null
+            ]);
+        } else {
+            $error = $response->json();
+            return response()->json([
+                'success' => false,
+                'message' => $error['message'] ?? 'Gagal melakukan koreksi stok',
+                'errors' => $error['errors'] ?? null
+            ], $response->status());
+        }
+    }
+
 
     public function exportExcel(Request $request)
     {
@@ -99,7 +211,6 @@ class riwayatContoller extends Controller
 
         // Header kolom
         $sheet->setCellValue('A3', 'No');
-        $sheet->setCellValue('B3', 'Kode Barang');
         $sheet->setCellValue('C3', 'Nama Barang');
         $sheet->setCellValue('D3', 'Kapasitas');
         $sheet->setCellValue('E3', 'Stok Sistem Isi');
@@ -136,35 +247,38 @@ class riwayatContoller extends Controller
         // Isi data
         $row = 4;
         foreach ($data as $i => $item) {
+            // Struktur API baru
             $stokSistem = $item['stok_sistem'] ?? [];
-            $stokFisik = $item['stok_fisik_terakhir'] ?? [];
+            $stokFisik = $item['stok_fisik'] ?? [];
             $selisih = $item['selisih'] ?? [];
 
+            // Hitung total selisih
+            $totalSelisih = ($selisih['isi'] ?? 0) + ($selisih['kosong'] ?? 0);
+
             $sheet->setCellValue("A{$row}", $i + 1);
-            $sheet->setCellValue("B{$row}", $item['kode_barang'] ?? '-');
             $sheet->setCellValue("C{$row}", $item['nama_barang'] ?? '-');
             $sheet->setCellValue("D{$row}", $item['kapasitas'] ?? '-');
-            $sheet->setCellValue("E{$row}", $stokSistem['tabung_isi'] ?? 0);
-            $sheet->setCellValue("F{$row}", $stokSistem['tabung_kosong'] ?? 0);
-            $sheet->setCellValue("G{$row}", $stokFisik['tabung_isi'] ?? '-');
-            $sheet->setCellValue("H{$row}", $stokFisik['tabung_kosong'] ?? '-');
-            $sheet->setCellValue("I{$row}", $selisih['tabung_isi'] ?? '-');
-            $sheet->setCellValue("J{$row}", $selisih['tabung_kosong'] ?? '-');
-            $sheet->setCellValue("K{$row}", $selisih['total'] ?? '-');
+            $sheet->setCellValue("E{$row}", $stokSistem['isi'] ?? 0);
+            $sheet->setCellValue("F{$row}", $stokSistem['kosong'] ?? 0);
+            $sheet->setCellValue("G{$row}", $stokFisik['isi'] ?? '-');
+            $sheet->setCellValue("H{$row}", $stokFisik['kosong'] ?? '-');
+            $sheet->setCellValue("I{$row}", $selisih['isi'] ?? '-');
+            $sheet->setCellValue("J{$row}", $selisih['kosong'] ?? '-');
+            $sheet->setCellValue("K{$row}", $totalSelisih !== 0 ? $totalSelisih : '-');
 
             // Format tanggal opname
-            if (isset($stokFisik['tanggal_opname']) && $stokFisik['tanggal_opname']) {
-                $tgl = \Carbon\Carbon::parse($stokFisik['tanggal_opname'])->format('d/m/Y');
+            if (isset($item['tanggal_opname']) && $item['tanggal_opname']) {
+                $tgl = \Carbon\Carbon::parse($item['tanggal_opname'])->format('d/m/Y');
                 $sheet->setCellValue("L{$row}", $tgl);
             } else {
                 $sheet->setCellValue("L{$row}", '-');
             }
 
-            $sheet->setCellValue("M{$row}", $stokFisik['keterangan'] ?? '-');
+            $sheet->setCellValue("M{$row}", $item['keterangan'] ?? '-');
 
             // Style untuk selisih dengan warna
-            if (isset($selisih['tabung_isi']) && $selisih['tabung_isi'] !== null) {
-                $selisihIsi = $selisih['tabung_isi'];
+            if (isset($selisih['isi']) && $selisih['isi'] !== null) {
+                $selisihIsi = $selisih['isi'];
                 if ($selisihIsi > 0) {
                     $sheet->getStyle("I{$row}")->getFont()->getColor()->setRGB('008000'); // Hijau
                 } elseif ($selisihIsi < 0) {
@@ -172,8 +286,8 @@ class riwayatContoller extends Controller
                 }
             }
 
-            if (isset($selisih['tabung_kosong']) && $selisih['tabung_kosong'] !== null) {
-                $selisihKosong = $selisih['tabung_kosong'];
+            if (isset($selisih['kosong']) && $selisih['kosong'] !== null) {
+                $selisihKosong = $selisih['kosong'];
                 if ($selisihKosong > 0) {
                     $sheet->getStyle("J{$row}")->getFont()->getColor()->setRGB('008000');
                 } elseif ($selisihKosong < 0) {
@@ -181,8 +295,7 @@ class riwayatContoller extends Controller
                 }
             }
 
-            if (isset($selisih['total']) && $selisih['total'] !== null) {
-                $totalSelisih = $selisih['total'];
+            if ($totalSelisih !== 0) {
                 if ($totalSelisih > 0) {
                     $sheet->getStyle("K{$row}")->getFont()->getColor()->setRGB('008000');
                     $sheet->getStyle("K{$row}")->getFont()->setBold(true);

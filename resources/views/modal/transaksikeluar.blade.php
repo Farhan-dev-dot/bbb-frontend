@@ -60,11 +60,7 @@
                             <i class="fas fa-box me-2"></i>Data Barang
                         </h6>
                     </div>
-                    <div class="col-md-3">
-                        <label for="kode_barang" class="form-label">Kode Barang</label>
-                        <input type="text" class="form-control" id="kode_barang" placeholder="Auto Generate" disabled
-                            readonly>
-                    </div>
+
                     <div class="col-md-6">
                         <label for="id_barang" class="form-label">
                             Nama Barang <span class="text-danger">*</span>
@@ -73,7 +69,7 @@
                             <option value="">-- Pilih Nama Barang --</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <label for="harga_satuan" class="form-label">Harga Satuan</label>
                         <input type="text" class="form-control" id="harga_satuan" placeholder="Rp 0" disabled
                             readonly>
@@ -86,10 +82,10 @@
                         </h6>
                     </div>
                     <div class="col-md-4">
-                        <label for="status" class="form-label">
+                        <label for="metode_pembayaran" class="form-label">
                             Metode Pembayaran <span class="text-danger">*</span>
                         </label>
-                        <select name="status" class="form-select" id="status" required>
+                        <select name="metode_pembayaran" class="form-select" id="metode_pembayaran" required>
                             <option value="">-- Pilih Pembayaran --</option>
                             <option value="cash">Cash</option>
                             <option value="transfer">Transfer</option>

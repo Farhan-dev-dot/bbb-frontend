@@ -289,7 +289,7 @@
                   <li class="nav-item">
                       <a href="{{ route('master-barang') }}" class="nav-link">
                           <i class="nav-icon bi bi-box-fill"></i>
-                          <p>Master Barang</p>
+                          <p>Barang</p>
                       </a>
                   </li>
                   {{-- <li class="nav-item">
@@ -313,14 +313,14 @@
                   </li>
                   <li class="nav-header">Laporan</li>
                   <li class="nav-item">
-                      <a href="" class="nav-link">
+                      <a href=" {{ route('riwayat-stok') }}" class="nav-link">
                           <i class="nav-icon bi bi-arrow-repeat"></i>
                           <p>Riwayat Stok</p>
                       </a>
                   </li>
                   <li class="nav-item">
-                      <a href="{{ route('riwayat-transaksi') }}" class="nav-link">
-                          <i class="nav-icon bi bi-arrow-repeat"></i>
+                      <a href="{{ route('stok-opname') }}" class="nav-link">
+                          <i class="fas fa-clipboard-check"></i>
                           <p>Stok Opname</p>
                       </a>
                   </li>

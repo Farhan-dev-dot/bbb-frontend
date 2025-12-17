@@ -18,7 +18,7 @@ class AuthController extends Controller
     public function postLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'username' => 'required|string',
             'password' => 'required|min:6',
         ]);
 
@@ -26,7 +26,7 @@ class AuthController extends Controller
 
         try {
             $response = Http::post($apiurl . '/api/auth/login', [
-                'email' => $request->email,
+                'username' => $request->username,
                 'password' => $request->password,
             ]);
 

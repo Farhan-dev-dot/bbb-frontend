@@ -113,4 +113,17 @@ class transaksimasukController extends Controller
 
         return response()->json($response->json(), $response->status());
     }
+    public function deleteData($id)
+    {
+        // Logic delete data
+        $apiUrl = env('APIURL');
+        $token = 'Bearer ' . session('access_token');
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+        ])->delete($apiUrl . '/api/barang-masuk/' . $id);
+        return response()->json($response->json(), $response->status());
+
+        // Return response JSON
+    }
 }

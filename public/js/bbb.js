@@ -3,24 +3,24 @@
         $("#Formlogin").on("submit", function (e) {
             e.preventDefault();
 
-            const email = $("#email").val();
+            const username = $("#username").val();
             const password = $("#password").val();
 
-            if (!email || !password) {
-                alert("Email dan password harus diisi");
+            if (!username || !password) {
+                alert("username dan password harus diisi");
                 return;
             }
 
-            loginUser(email, password);
+            loginUser(username, password);
         });
     });
 
-    function loginUser(email, password) {
+    function loginUser(username, password) {
         $.ajax({
             url: "/postlogin",
             type: "POST",
             data: {
-                email: email,
+                username: username,
                 password: password,
                 _token: $('meta[name="csrf-token"]').attr("content"),
             },
@@ -34,7 +34,7 @@
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                 } else if (xhr.status === 401) {
-                    errorMessage = "Email atau password salah";
+                    errorMessage = "username atau password salah";
                 } else if (xhr.status === 422) {
                     const errors = xhr.responseJSON?.errors;
                     if (errors) {

@@ -5,7 +5,8 @@ use App\Http\Controllers\master\master_barangController;
 use App\Http\Controllers\master\master_customerController;
 use App\Http\Controllers\report\LaporanContoller;
 use App\Http\Controllers\system\AuthController;
-use App\Http\Controllers\transaksi\riwayatContoller;
+use App\Http\Controllers\transaksi\riwayatstokController;
+use App\Http\Controllers\transaksi\stokopnameContoller;
 use App\Http\Controllers\transaksi\transaksikeluarController;
 use App\Http\Controllers\transaksi\transaksimasukController;
 use Illuminate\Support\Facades\Route;
@@ -68,13 +69,19 @@ Route::middleware(['check.token'])->group(function () {
     Route::post('/transaksi-masuk/insert-data', [transaksimasukController::class, 'InsertData']);
     Route::patch('/transaksi-masuk/update-data/{id}', [transaksimasukController::class, 'UpdateData']);
     Route::get('/transaksi-masuk/customer-list', [transaksimasukController::class, 'getCustomerList']);
-
-    //Riwayat Transaksi Routes
-    Route::get('/riwayat-transaksi', [riwayatContoller::class, 'index'])->name('riwayat-transaksi');
-    Route::get('/riwayat-transaksi/getdata', [riwayatContoller::class, 'getData']);
-    Route::get('/riwayat-transaksi/cetak', [riwayatContoller::class, 'Cetakprint']);
-    Route::post('/riwayat-transaksi/export', [riwayatContoller::class, 'exportExcel']);
-    Route::delete('/riwayat-transaksi/delete-data/{id}', [riwayatContoller::class, 'deleteRiwayat']);
+    Route::delete('/transaksi-masuk/delete-data/{id}', [TransaksiMasukController::class, 'deleteData']);
+    // Stok Opname Routes
+    Route::get('/stok-opname', [stokopnameContoller::class, 'index'])->name('stok-opname');
+    Route::get('/stok-opname/getdata', [stokopnameContoller::class, 'getData']);
+    Route::get('/stok-opname/current-stok', [stokopnameContoller::class, 'getCurrentStok']);
+    Route::get('/stok-opname/history/{id_barang}', [stokopnameContoller::class, 'getHistory']);
+    Route::get('/stok-opname/cetak', [stokopnameContoller::class, 'Cetakprint']);
+    Route::post('/stok-opname/export', [stokopnameContoller::class, 'exportExcel']);
+    Route::post('/stok-opname/koreksi-stok', [stokopnameContoller::class, 'KoreksiStok']);
+    Route::delete('/stok-opname/delete-data/{id}', [stokopnameContoller::class, 'deleteRiwayat']);
+    //Riwayat Stok Routes
+    Route::get('/riwayat-stok', [riwayatstokController::class, 'index'])->name('riwayat-stok');
+    Route::get('/riwayat-stok/getdata', [riwayatstokController::class, 'getData']);
 
     // Report Routes
     Route::get('/form-laporan', [LaporanContoller::class, 'index'])->name('form-laporan');

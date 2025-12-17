@@ -1,10 +1,10 @@
 @extends('layouts.master')
 
-@section('title', 'Master Barang')
+@section('title', ' Barang')
 
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('/') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Master Barang</li>
+    <li class="breadcrumb-item active"> Barang</li>
 @endsection
 
 @section('content')
@@ -19,12 +19,6 @@
             <div id="filterCollapse" class="collapse">
                 <div class="card-body p-3"> <!-- konsisten padding -->
                     <div class="row g-3"> <!-- gap antar kolom -->
-                        <div class="col-12 col-md-6">
-                            <label for="kodekeyword" class="form-label mb-1">Kode Barang</label>
-                            <select name="kodekeyword" class="form-select" id="kodekeyword">
-                                <option value="">Select Kode Barang</option>
-                            </select>
-                        </div>
                         <div class="col-12 col-md-6">
                             <label for="namakeyword" class="form-label mb-1">Nama Barang</label>
                             <input type="text" class="form-control" id="namakeyword" placeholder="Nama Barang" />
@@ -61,7 +55,6 @@
                                 <th>Harga</th>
                                 <th>Tabung Isi</th>
                                 <th>Tabung Kosong</th>
-                                <th>Kode Barang</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -137,10 +130,6 @@
                     tampilkanDataKeTable(dataBarang);
                     tampilkanPaginasi(response);
 
-                    // Isi dropdown kode barang jika belum terisi
-                    if ($('#kodekeyword option').length <= 1) {
-                        isiDropdownKodeBarang(dataBarang);
-                    }
                 },
                 error: function(xhr, status, error) {
                     // Redirect ke login jika unauthorized atau server error
@@ -175,7 +164,6 @@
                     '<td>' + item.harga_jual + '</td>' +
                     '<td>' + item.stok_tabung_isi + '</td>' +
                     '<td>' + item.stok_tabung_kosong + '</td>' +
-                    '<td>' + item.kode_barang + '</td>' +
                     '</tr>';
                 tbody.append(baris);
             });
@@ -214,31 +202,12 @@
             $('#divPagination').html(htmlPaginasi);
         }
 
-        // ==================== FUNGSI ISI DROPDOWN ====================
-        function isiDropdownKodeBarang(dataBarang) {
-            var dropdown = $('#kodekeyword');
-            var nilaiSebelumnya = dropdown.val();
-
-            dropdown.empty();
-            dropdown.append('<option value="">Select Kode Barang</option>');
-
-            $.each(dataBarang, function(indeks, item) {
-                dropdown.append('<option value="' + item.kode_barang + '">' + item.kode_barang + '</option>');
-            });
-
-            // Kembalikan nilai jika ada
-            if (nilaiSebelumnya) {
-                dropdown.val(nilaiSebelumnya);
-            }
-        }
-
         // ==================== FUNGSI TAMBAH DATA ====================
         function bukaFormTambahData() {
             if (modeDraft == 0) {
                 $('#form-data').trigger('reset');
             }
             $('#id_barang').val('');
-            $('#kode_barang').val('');
             modeDraft = 1;
             $('#ModalTitleBarang').html('Tambah Data Barang');
             $('#ModalBarang').modal('show');
@@ -298,7 +267,6 @@
         // ==================== FUNGSI SIMPAN DATA ====================
         function simpanData() {
             var idBarang = $("#id_barang").val();
-            var kodeBarang = $('#kode_barang').val();
             var namaBarang = $("#nama_barang").val();
             var kapasitas = $("#kapasitas").val();
             var hargaJual = $("#harga_jual").val();
@@ -313,7 +281,7 @@
             if (!namaBarang) {
                 Swal.fire({
                     title: 'Peringatan',
-                    text: 'Kode barang dan nama barang wajib diisi!',
+                    text: ' dan nama barang wajib diisi!',
                     icon: 'warning'
                 });
                 return;
@@ -334,7 +302,6 @@
             // Data yang akan dikirim
             var dataKirim = {
                 id_barang: idBarang,
-                kode_barang: kodeBarang,
                 nama_barang: namaBarang,
                 kapasitas: kapasitas || '',
                 harga_jual: hargaJual || 0,
@@ -394,7 +361,6 @@
                     console.log(data);
                     if (data) {
                         $('#id_barang').val(data.id_barang);
-                        $('#kode_barang').val(data.kode_barang);
                         $('#nama_barang').val(data.nama_barang);
                         $('#kapasitas').val(data.kapasitas);
                         $('#harga_jual').val(data.harga_jual);

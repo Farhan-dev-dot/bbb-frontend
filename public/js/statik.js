@@ -216,6 +216,16 @@ function buatChartPendapatan(data) {
     let dataChart = new Array(31).fill(0);
     let nilaiMaksimal = 0;
 
+    // Ambil bulan dan tahun dari filter untuk validasi
+    var tanggalVal = $("#tanggal").val();
+    var bulanFilter = null,
+        tahunFilter = null;
+    if (tanggalVal) {
+        var parts = tanggalVal.split("-");
+        tahunFilter = parts[0];
+        bulanFilter = parts[1];
+    }
+
     // Proses data dari API
     if (Array.isArray(data) && data.length > 0) {
         data.forEach(function (item) {
@@ -223,6 +233,15 @@ function buatChartPendapatan(data) {
                 // Ekstrak hari dari tanggal (contoh: "2025-11-15" -> 15)
                 const tanggal = new Date(item.tanggal);
                 const hari = tanggal.getDate();
+                const bulan = String(tanggal.getMonth() + 1).padStart(2, "0");
+                const tahun = String(tanggal.getFullYear());
+
+                // Filter: Hanya tampilkan data sesuai bulan dan tahun filter
+                if (bulanFilter && tahunFilter) {
+                    if (bulan !== bulanFilter || tahun !== tahunFilter) {
+                        return; // Skip data yang tidak sesuai filter
+                    }
+                }
 
                 // Hari 1-31, konversi ke index array 0-30
                 const indeksHari = hari - 1;
@@ -242,7 +261,7 @@ function buatChartPendapatan(data) {
     // Tentukan nilai maksimal Y-axis
     let batasMaksimalY = hitungBatasMaksimalY(nilaiMaksimal);
 
-    // Buat chart bar baru
+    // Buat mixed chart (bar + line)
     new Chart(canvas, {
         type: "bar",
         data: {
@@ -262,6 +281,29 @@ function buatChartPendapatan(data) {
                     hoverBackgroundColor: "#ff9b58",
                     hoverBorderColor: "#FF6C0C",
                     hoverBorderWidth: 2,
+                    type: "bar",
+                    order: 2,
+                    barPercentage: 0.3,
+                },
+                {
+                    label: "Trend",
+                    data: dataChart,
+                    type: "line",
+                    borderColor: "#ff9b58",
+                    backgroundColor: "rgba(255, 73, 0, 0.43)",
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointBackgroundColor: "#ff9b58",
+                    pointBorderColor: "#fff",
+                    pointBorderWidth: 0,
+                    pointHoverRadius: 0,
+                    pointHoverBackgroundColor: "#ff9b58",
+                    pointHoverBorderColor: "#fff",
+                    pointHoverBorderWidth: 0,
+                    order: 1,
+                    hidden: false,
                 },
             ],
         },
@@ -269,6 +311,14 @@ function buatChartPendapatan(data) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                legend: {
+                    labels: {
+                        filter: function (item, chart) {
+                            // Hanya tampilkan "Total Penjualan" di legend
+                            return item.text === "Total Penjualan";
+                        },
+                    },
+                },
                 tooltip: {
                     callbacks: {
                         label: function (context) {

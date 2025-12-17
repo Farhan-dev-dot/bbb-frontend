@@ -9,11 +9,7 @@
                     <form class="row g-3" id="form-data">
                         <input type="hidden" id="id_barang" name="id_barang">
 
-                        <div class="col-md-3">
-                            <label for="kode_barang" class="form-label">Kode Barang</label>
-                            <input type="text" class="form-control" id="kode_barang" placeholder="Generate by system"
-                                disabled readonly>
-                        </div>
+
                         <div class="col-md-4">
                             <label for="nama_barang" class="form-label">Nama Barang</label>
                             <input type="text" class="form-control" id="nama_barang" placeholder="Nama Barang">

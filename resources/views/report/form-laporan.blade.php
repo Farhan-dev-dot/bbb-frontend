@@ -46,7 +46,6 @@
         var datas = [];
         $(document).ready(function() {
             $('#tombol-excel').on('click', function() {
-                // Ambil data yang sudah difilter, misal dari variabel global 'datas'
                 var tanggal_dari = $('#tanggal_dari').val();
                 var tanggal_sampai = $('#tanggal_sampai').val();
 
@@ -59,56 +58,76 @@
                     return;
                 }
 
+                // Ambil data terbaru dulu sebelum export
                 $.ajax({
-                    url: "/laporan-transaksi/export",
-                    method: "POST",
+                    url: '/laporan-transaksi/getdata',
+                    type: 'GET',
                     data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        data: JSON.stringify(datas) // datas harus berisi data yang sudah terfilter!
+                        tanggal_dari: tanggal_dari,
+                        tanggal_sampai: tanggal_sampai,
                     },
-                    xhrFields: {
-                        responseType: 'blob'
+                    success: function(respons) {
+                        var data = respons.laporan || [];
+
+                        console.log('Data dari API:', data);
+                        console.log('Jumlah data:', data.length);
+
+                        if (data.length === 0) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Tidak Ada Data',
+                                text: 'Tidak ada data untuk periode yang dipilih.'
+                            });
+                            return;
+                        }
+
+                        // Export data
+                        $.ajax({
+                            url: "/laporan-transaksi/export",
+                            method: "POST",
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                data: JSON.stringify(data)
+                            },
+                            xhrFields: {
+                                responseType: 'blob'
+                            },
+                            success: function(blob) {
+                                let url = URL.createObjectURL(blob);
+                                let a = document.createElement('a');
+                                a.href = url;
+                                a.download = "Laporan_Transaksi_" + tanggal_dari +
+                                    "_" + tanggal_sampai + ".xlsx";
+                                a.click();
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: 'File berhasil didownload!',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal Export',
+                                    text: 'Terjadi kesalahan saat export data.'
+                                });
+                            }
+                        });
                     },
-                    success: function(blob) {
-                        let url = URL.createObjectURL(blob);
-                        let a = document.createElement('a');
-                        a.href = url;
-                        a.download = "Laporan Transaksi.xlsx";
-                        a.click();
+                    error: function(xhr) {
+                        Swal.fire({
+                            title: 'Kesalahan',
+                            text: 'Gagal mengambil data: ' + (xhr.responseJSON
+                                ?.message || 'Unknown error'),
+                            icon: 'error'
+                        });
                     }
                 });
             });
 
-
-            $('#tanggal_dari, #tanggal_sampai').on('change', function() {
-                getData();
-            });
         });
-
-        function getData() {
-            $.ajax({
-                url: '/laporan-transaksi/getdata',
-                type: 'GET',
-                data: {
-                    tanggal_dari: $('#tanggal_dari').val(),
-                    tanggal_sampai: $('#tanggal_sampai').val(),
-                },
-                success: function(respons) {
-                    var data = respons.laporan;
-                    datas = data;
-                    console.log(datas);
-
-                },
-                error: function(xhr) {
-                    Swal.fire({
-                        title: 'Kesalahan',
-                        text: 'Terjadi kesalahan: ' + (xhr.responseJSON?.message ||
-                            'Unknown error'),
-                        icon: 'error'
-                    });
-                }
-            });
-
-        }
     </script>
 @endpush
