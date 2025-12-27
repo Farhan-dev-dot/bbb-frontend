@@ -286,18 +286,22 @@
             modeDraft = 0;
             $('#Modal-title').html('Edit Data Transaksi Masuk');
 
-            // Ambil data
-            ambilDataById(id);
+            // ISI DROPDOWN BARANG DULU, BARU AMBIL DATA
+            isiDropdownBarang(function() {
+                // Callback setelah dropdown terisi
+                ambilDataById(id);
 
-            // Aktifkan input untuk edit
-            $('#form-data input:not([readonly]), #form-data select, #form-data textarea').prop('disabled', false);
-            $('#btn-save').prop('disabled', false);
+                // Aktifkan input untuk edit
+                $('#form-data input:not([readonly]), #form-data select, #form-data textarea').prop('disabled',
+                    false);
+                $('#btn-save').prop('disabled', false);
 
-            // Sembunyikan tombol "Tambah Item" karena mode edit langsung update
-            $('#btnTambahItem').hide();
+                // Tampilkan tombol "Tambah Item"
+                $('#btnTambahItem').show();
 
-            // Buka modal
-            $('#Modalbody').modal('show');
+                // Buka modal
+                $('#Modalbody').modal('show');
+            });
         }
 
         // ============================================
@@ -749,7 +753,7 @@
         // ============================================
         // FUNGSI: ISI DROPDOWN BARANG
         // ============================================
-        function isiDropdownBarang() {
+        function isiDropdownBarang(callback) {
             var dropdown = $('#id_barang');
             var nilaiSebelumnya = dropdown.val();
 
@@ -772,7 +776,6 @@
 
                                 daftarSemuaBarang.push({
                                     id_barang: item.id_barang,
-
                                     nama_barang: item.nama_barang,
                                     harga_jual: item.harga_jual
                                 });
@@ -790,9 +793,19 @@
                     if (nilaiSebelumnya) {
                         dropdown.val(nilaiSebelumnya);
                     }
+
+                    // Panggil callback setelah dropdown terisi
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 },
                 error: function() {
                     dropdown.append('<option value="" disabled>Gagal mengambil data barang</option>');
+
+                    // Tetap panggil callback meskipun error
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 }
             });
         }
